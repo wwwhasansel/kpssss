@@ -96,7 +96,10 @@ def shorten_description(desc):
         desc = desc[:72] + '...'
     return desc
 
-
+@app.get("/healthz")
+def healthz():
+    return "ok", 200
+    
 def build_nitelik_descriptions():
     """Lisans ve önlisans nitelik PDF'lerini okuyup {kod: açıklama} sözlüğü döndür."""
     descriptions = {}
