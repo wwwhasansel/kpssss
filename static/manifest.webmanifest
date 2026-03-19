@@ -1,0 +1,27 @@
+{
+  "name": "OSYM Taban Puanlari",
+  "short_name": "OSYM Puan",
+  "description": "OSYM taban puanlari, kontenjan ve nitelik kodlarini arayabileceginiz yuklenebilir uygulama.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eef2f7",
+  "theme_color": "#1565c0",
+  "categories": ["education", "productivity"],
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/static/icons/icon-app.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OSYM Puan</string>
+    <string name="title_activity_main">OSYM Puan</string>
+    <string name="package_name">com.osympuan.app</string>
+    <string name="custom_url_scheme">com.osympuan.app</string>
+</resources>

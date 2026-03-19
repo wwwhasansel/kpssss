@@ -1,0 +1,34 @@
+{% if messages %}
+    <p class="message">{{ messages | join(' ') }}</p>
+{% endif %}
+
+{% if tablo %}
+    <h2>Sonuçlar</h2>
+    <div class="table-wrap">
+    <table>
+            <tr>
+                {% for key in tablo[0].keys() %}
+                    <th>
+                        {{ key }}
+                        {% if key in ["Kontenjan","Min Puan","Max Puan"] %}
+                            <span class="sort-arrow" data-col="{{ key }}" data-order="asc">&#9650;</span>
+                            <span class="sort-arrow" data-col="{{ key }}" data-order="desc">&#9660;</span>
+                        {% endif %}
+                    </th>
+                {% endfor %}
+            </tr>
+            {% for row in tablo %}
+            <tr>
+                {% for value in row.values() %}
+                    <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+    </table>
+    </div>
+    {% if excel_path %}
+        <a href="/download/{{ excel_path }}">Excel İndir</a>
+    {% endif %}
+{% elif not messages %}
+    <p>Sonuç bulunamadı.</p>
+{% endif %}

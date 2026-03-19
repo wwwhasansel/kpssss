@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÖSYM Taban Puanları Arama - Bölüm Başına Min/Max Puan Bul</title>
+    <meta name="description" content="ÖSYM sınavlarında bölüm taban puanlarını hızlıca ara. 2024-2025 lisans/önlisans dönemleri için min-max puanlar, kontenjan bilgileri ve ÖSYM kodlarına göre arama.">
+    <meta name="keywords" content="{{ keywords }}">
+    <meta name="author" content="ÖSYM Puan Arama Sistemi">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#1565c0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OSYM Puan">
+    <link rel="canonical" href="https://ornek-site.com/">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="/static/icons/icon-app.svg">
+    <link rel="stylesheet" href="/static/style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "ÖSYM Taban Puanları Arama",
+        "description": "ÖSYM sınavlarında bölüm taban puanlarını arama sistemi",
+        "url": "https://ornek-site.com/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "TRY"
+        },
+        "creator": {
+            "@type": "Organization",
+            "name": "ÖSYM Puan Arama Sistemi"
+        }
+    }
+    </script>
+</head>
+<body>
+    <!-- spinner shown until page fully loaded -->
+    <div id="spinner">
+        <div class="spinner-circle"></div>
+    </div>
+
+    <!-- overlay shown during form submission -->
+    <div id="overlay">
+        <div class="spinner-circle"></div>
+        <div>Lütfen bekleyiniz...</div>
+        <div id="estimated-time">Tahmini süre: <span id="countdown">00:25</span></div>
+    </div>
+
+    <div class="container">
+        <div class="site-header">
+            <span class="header-icon">🎓</span>
+            <h1>ÖSYM Taban Puanları Arama Sistemi</h1>
+            <p>Bölüm taban puanlarını (min-max) ve kontenjan bilgilerini hızlıca bulun.<br>Nitelik kodu veya bölüm adı yazarak arama yapın.</p>
+            <div class="app-actions">
+                <button type="button" id="installAppButton" class="install-btn" hidden>Uygulamayi Yukle</button>
+                <span id="appInstallHint" class="install-hint">Telefon ve masaustunde uygulama gibi kurulabilir.</span>
+            </div>
+        </div>
+
+        <div class="form-section">
+        <form id="searchForm" method="post">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="yil">Yıl</label>
+                    <select id="yil" name="yil" required>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="donem">Dönem</label>
+                    <select id="donem" name="donem" required>
+                        <option value="1">1. Dönem</option>
+                        <option value="2">2. Dönem</option>
+                        <option value="all">Tüm Dönemler</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="egitim">Eğitim Türü</label>
+                    <select id="egitim" name="egitim" required>
+                        <option value="lisans">Lisans</option>
+                        <option value="onlisans">Önlisans</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="kod">ÖSYM Kodu</label>
+                    <input id="kod" type="text" name="kod" autocomplete="off" required>
+                    <div id="suggestions" class="suggestions-list"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Ara</button>
+        </form>
+        </div>
+        <div id="results">
+            {% if messages %}
+                <p class="message">{{ messages | join(' ') }}</p>
+            {% endif %}
+            {% if tablo %}
+                <h2>Sonuçlar</h2>
+                <div class="table-wrap">
+                    <table>
+                        <tr>
+                            {% for key in tablo[0].keys() %}
+                                <th>
+                                    {{ key }}
+                                    {% if key in ["Kontenjan","Min Puan","Max Puan"] %}
+                                        <span class="sort-arrow" data-col="{{ key }}" data-order="asc" title="Kucukten buyuge sirala">&#9650;</span>
+                                        <span class="sort-arrow" data-col="{{ key }}" data-order="desc" title="Buyukten kucuge sirala">&#9660;</span>
+                                    {% endif %}
+                                </th>
+                            {% endfor %}
+                        </tr>
+                        {% for row in tablo %}
+                            <tr>
+                                {% for value in row.values() %}
+                                    <td>{{ value }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% if excel_path %}
+                    <a href="/download/{{ excel_path }}">Excel İndir</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <footer>
+        <h2>ÖSYM Taban Puanları Hakkında</h2>
+        <p>Bu sistem, ÖSYM'nin yayınladığı resmi tabloları kullanarak bölüm bazında taban puanlarını (en düşük ve en yüksek puan) gösterir. Lisans ve önlisans programları için 2024-2025 dönemlerini destekler.</p>
+        <p><strong>Nasıl Kullanılır?</strong> Yıl, dönem, eğitim türü seçin ve aramak istediğiniz nitelik kodunu girin. Sistem otomatik olarak ilgili ÖSYM kodunu bulup puan bilgilerini listeler.</p>
+        <p><strong>Popüler Bölüm Aramaları:</strong> Makine Mühendisliği taban puanı, Hukuk atama puanı, Tıp Fakültesi puanları, Elektrik Elektronik Mühendisliği kontenjan, Bilgisayar Mühendisliği min max puan.</p>
+        <p>Veriler ÖSYM kaynaklıdır. Güncel bilgiler için resmi ÖSYM sitesini ziyaret edin.</p>
+    </footer>
+
+    <script>
+        function attachSortHandlers() {
+            var arrows = document.querySelectorAll('#results .sort-arrow');
+            arrows.forEach(function(arrow) {
+                arrow.addEventListener('click', function() {
+                    var col = this.dataset.col;
+                    var order = this.dataset.order;
+                    submitWithSort(col, order);
+                });
+            });
+        }
+
+        function submitWithSort(sortBy, sortOrder) {
+            var form = document.getElementById('searchForm');
+            var overlay = document.getElementById('overlay');
+            var resultsDiv = document.getElementById('results');
+            if (!form || !overlay || !resultsDiv) return;
+            // build new form data including current inputs plus sort params
+            var formData = new FormData(form);
+            formData.set('sort_by', sortBy);
+            formData.set('sort_order', sortOrder);
+            // clear results and show overlay
+            resultsDiv.innerHTML = '';
+            overlay.style.display = 'flex';
+            // disable submit to prevent double submit
+            var submitBtn = form.querySelector('button[type=submit]');
+            if (submitBtn) submitBtn.disabled = true;
+            startCountdown(25);
+            fetch('/', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function(resp) { return resp.text(); })
+            .then(function(html) {
+                resultsDiv.innerHTML = html;
+                attachSortHandlers();
+            })
+            .catch(function(err) {
+                console.error(err);
+                resultsDiv.innerHTML = '<p style="color:red;">Hata oluştu. Lütfen tekrar deneyin.</p>';
+            })
+            .finally(function() {
+                overlay.style.display = 'none';
+                stopCountdown();
+                if (submitBtn) submitBtn.disabled = false;
+                // if no results returned, show message
+                if (!resultsDiv.innerHTML.trim()) {
+                    resultsDiv.innerHTML = '<p>Sonuç bulunamadı.</p>';
+                }
+            });
+        }
+
+        var countdownInterval;
+        function updateCountdownDisplay(sec) {
+            var min = Math.floor(sec/60);
+            var s = sec % 60;
+            document.getElementById('countdown').textContent =
+                String(min).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        }
+
+        function startCountdown(duration) {
+            var remaining = duration;
+            updateCountdownDisplay(remaining);
+            countdownInterval = setInterval(function() {
+                remaining--;
+                if (remaining < 0) {
+                    clearInterval(countdownInterval);
+                    return;
+                }
+                updateCountdownDisplay(remaining);
+            }, 1000);
+        }
+
+        function stopCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        }
+
+        // attach form handler as soon as DOM ready (safer than load)
+        document.addEventListener('DOMContentLoaded', function() {
+            var deferredInstallPrompt = null;
+            var spinner = document.getElementById('spinner');
+            var overlay = document.getElementById('overlay');
+            var form = document.getElementById('searchForm');
+            var resultsDiv = document.getElementById('results');
+            var kodInput = document.getElementById('kod');
+            var suggestionsDiv = document.getElementById('suggestions');
+            var installButton = document.getElementById('installAppButton');
+            var appInstallHint = document.getElementById('appInstallHint');
+
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
+
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/service-worker.js').catch(function(err) {
+                        console.error('Service worker registration failed:', err);
+                    });
+                });
+            }
+
+            window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                deferredInstallPrompt = e;
+                if (installButton) {
+                    installButton.hidden = false;
+                }
+                if (appInstallHint) {
+                    appInstallHint.textContent = 'Uygulama olarak yuklemek icin butona basin.';
+                }
+            });
+
+            window.addEventListener('appinstalled', function() {
+                deferredInstallPrompt = null;
+                if (installButton) {
+                    installButton.hidden = true;
+                }
+                if (appInstallHint) {
+                    appInstallHint.textContent = 'Uygulama cihaza yuklendi.';
+                }
+            });
+
+            if (installButton) {
+                installButton.addEventListener('click', async function() {
+                    if (!deferredInstallPrompt) {
+                        if (appInstallHint) {
+                            appInstallHint.textContent = 'Tarayici yukleme secenegi gostermediginde menuden ana ekrana ekleyebilirsiniz.';
+                        }
+                        return;
+                    }
+                    deferredInstallPrompt.prompt();
+                    var choiceResult = await deferredInstallPrompt.userChoice;
+                    deferredInstallPrompt = null;
+                    installButton.hidden = true;
+                    if (appInstallHint) {
+                        appInstallHint.textContent = choiceResult.outcome === 'accepted'
+                            ? 'Kurulum baslatildi.'
+                            : 'Kurulum iptal edildi. Daha sonra tekrar deneyebilirsiniz.';
+                    }
+                });
+            }
+
+            // Autocomplete for kod input
+            var selectedIndex = -1;
+
+            function selectSuggestion(label) {
+                // "4630 - Makine Mühendisliği" → "4630"
+                kodInput.value = label.split(' - ')[0].trim();
+                suggestionsDiv.style.display = 'none';
+                selectedIndex = -1;
+            }
+
+            function highlightItem(items, index) {
+                items.forEach(function(el, i) {
+                    el.classList.toggle('active', i === index);
+                });
+            }
+
+            kodInput.addEventListener('keydown', function(e) {
+                var items = suggestionsDiv.querySelectorAll('.suggestion-item');
+                if (!items.length) return;
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                    highlightItem(items, selectedIndex);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                    highlightItem(items, selectedIndex);
+                } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                    e.preventDefault();
+                    selectSuggestion(items[selectedIndex].dataset.label);
+                } else if (e.key === 'Escape') {
+                    suggestionsDiv.style.display = 'none';
+                    selectedIndex = -1;
+                }
+            });
+
+            kodInput.addEventListener('input', function() {
+                var query = this.value.trim();
+                selectedIndex = -1;
+                if (query.length < 2) {
+                    suggestionsDiv.style.display = 'none';
+                    return;
+                }
+                fetch('/api/suggestions?q=' + encodeURIComponent(query))
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestionsDiv.innerHTML = '';
+                        if (data.suggestions.length > 0) {
+                            data.suggestions.forEach(function(label) {
+                                var div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                div.dataset.label = label;
+                                // Kodu kalın, açıklamayı normal göster
+                                var parts = label.split(' - ');
+                                var kodSpan = document.createElement('strong');
+                                kodSpan.textContent = parts[0];
+                                div.appendChild(kodSpan);
+                                if (parts.length > 1) {
+                                    div.appendChild(document.createTextNode(' — ' + parts.slice(1).join(' - ')));
+                                }
+                                div.addEventListener('mousedown', function(e) {
+                                    e.preventDefault(); // blur tetiklenmesin
+                                    selectSuggestion(label);
+                                });
+                                suggestionsDiv.appendChild(div);
+                            });
+                            suggestionsDiv.style.display = 'block';
+                        } else {
+                            suggestionsDiv.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Suggestions error:', err));
+            });
+
+            // Hide suggestions on click outside
+            document.addEventListener('click', function(e) {
+                if (!kodInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+
+            if (form && overlay && resultsDiv) {
+                console.log('attaching submit handler');
+                form.addEventListener('submit', function(ev) {
+                    ev.preventDefault();
+                    console.log('form submit intercepted');
+                    submitWithSort('', '');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
