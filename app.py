@@ -18,12 +18,21 @@ NITELIK_DESC_FILE = os.path.join(BASE_DIR, "nitelik_descriptions.json")
 # Cache for PDF tables to avoid re-reading on every request
 pdf_cache = {}
 
+def _cache_key(pdf_path):
+    """Normalize PDF path to a relative key so the cache works across platforms."""
+    try:
+        return os.path.relpath(pdf_path, BASE_DIR)
+    except ValueError:
+        return pdf_path
+
 def load_cache():
     global pdf_cache
     if os.path.exists(CACHE_FILE):
         try:
             with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-                pdf_cache = json.load(f)
+                raw = json.load(f)
+            # Only keep entries with relative (non-absolute) keys to stay portable
+            pdf_cache = {k: v for k, v in raw.items() if not os.path.isabs(k)}
         except Exception as e:
             print(f"Cache yüklenirken hata: {e}")
             pdf_cache = {}
@@ -36,7 +45,8 @@ def save_cache():
         print(f"Cache kaydedilirken hata: {e}")
 
 def get_pdf_tables(pdf_path):
-    if pdf_path not in pdf_cache:
+    key = _cache_key(pdf_path)
+    if key not in pdf_cache:
         tables = []
         try:
             with pdfplumber.open(pdf_path) as pdf:
@@ -47,9 +57,9 @@ def get_pdf_tables(pdf_path):
         except Exception as e:
             print(f"Error reading {pdf_path}: {e}")
             tables = []
-        pdf_cache[pdf_path] = tables
+        pdf_cache[key] = tables
         save_cache()  # Save after loading new PDF
-    return pdf_cache[pdf_path]
+    return pdf_cache[key]
 
 def get_all_program_names():
     """Extract all program names from minmax PDFs for SEO keywords."""
